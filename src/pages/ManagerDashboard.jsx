@@ -17,10 +17,10 @@ export default function ManagerDashboard({ profile }) {
     const { data: emps } = await supabase.rpc('get_all_profiles')
     setEmployees(emps?.filter(e => e.role === 'employee') || [])
     const { data: alws } = await supabase
-  .from('holiday_allowances').select('*').eq('year', currentYear)
-const map = {}
-alws?.forEach(a => { map[a.employee_id] = { total: a.total_days, unpaid: a.unpaid_days } })
-setAllowances(map)
+      .from('holiday_allowances').select('*').eq('year', currentYear)
+    const map = {}
+    alws?.forEach(a => { map[a.employee_id] = { total: a.total_days, unpaid: a.unpaid_days } })
+    setAllowances(map)
   }
 
   async function updateStatus(id, status) {
@@ -34,30 +34,30 @@ setAllowances(map)
   }
 
   async function setAllowance(employeeId, days, unpaidDays) {
-  await supabase.from('holiday_allowances').upsert(
-    { employee_id: employeeId, year: currentYear, total_days: parseInt(days), unpaid_days: parseInt(unpaidDays) },
-    { onConflict: 'employee_id,year' }
-  )
-  fetchAll()
-}
+    await supabase.from('holiday_allowances').upsert(
+      { employee_id: employeeId, year: currentYear, total_days: parseInt(days), unpaid_days: parseInt(unpaidDays) },
+      { onConflict: 'employee_id,year' }
+    )
+    fetchAll()
+  }
 
   function getDaysUsed(employeeId) {
-  return requests
-    .filter(r => r.employee_id === employeeId && r.status === 'approved' && r.leave_type === 'holiday')
-    .reduce((sum, r) => sum + r.days_requested, 0)
-}
+    return requests
+      .filter(r => r.employee_id === employeeId && r.status === 'approved' && r.leave_type === 'holiday')
+      .reduce((sum, r) => sum + r.days_requested, 0)
+  }
 
-function getUnpaidDaysUsed(employeeId) {
-  return requests
-    .filter(r => r.employee_id === employeeId && r.status === 'approved' && r.leave_type === 'unpaid')
-    .reduce((sum, r) => sum + r.days_requested, 0)
-}
+  function getUnpaidDaysUsed(employeeId) {
+    return requests
+      .filter(r => r.employee_id === employeeId && r.status === 'approved' && r.leave_type === 'unpaid')
+      .reduce((sum, r) => sum + r.days_requested, 0)
+  }
 
   function getDaysRemaining(employeeId) {
-  const total = allowances[employeeId]?.total ?? null
-  if (total === null) return null
-  return total - getDaysUsed(employeeId)
-}
+    const total = allowances[employeeId]?.total ?? null
+    if (total === null) return null
+    return total - getDaysUsed(employeeId)
+  }
 
   function getInitials(name) {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -115,7 +115,7 @@ function getUnpaidDaysUsed(employeeId) {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px' }}>
 
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: 20, fontWeight: 600 }}>Dashboard</h1>
@@ -160,6 +160,7 @@ function getUnpaidDaysUsed(employeeId) {
           border: `1px solid ${theme.colors.border}`, overflow: 'hidden',
           boxShadow: theme.shadow.sm,
         }}>
+
           {tab === 'requests' && (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -171,7 +172,7 @@ function getUnpaidDaysUsed(employeeId) {
               </thead>
               <tbody>
                 {requests.length === 0 && (
-                  <tr><td colSpan={7} style={{ padding: '28px 20px', color: theme.colors.textMuted, fontSize: 14 }}>
+                  <tr><td colSpan={8} style={{ padding: '28px 20px', color: theme.colors.textMuted, fontSize: 14 }}>
                     No requests yet.
                   </td></tr>
                 )}
@@ -184,8 +185,7 @@ function getUnpaidDaysUsed(employeeId) {
                           border: `1px solid ${theme.colors.border}`,
                           borderRadius: theme.radius.full, display: 'flex',
                           alignItems: 'center', justifyContent: 'center',
-                          fontSize: 10, fontWeight: 600, color: theme.colors.textSecondary,
-                          flexShrink: 0,
+                          fontSize: 10, fontWeight: 600, color: theme.colors.textSecondary, flexShrink: 0,
                         }}>{getInitials(r.full_name)}</div>
                         {r.full_name}
                       </div>
@@ -194,14 +194,13 @@ function getUnpaidDaysUsed(employeeId) {
                     <td style={tdStyle}>{r.end_date}</td>
                     <td style={tdStyle}>{r.days_requested}</td>
                     <td style={tdStyle}>
-  <span style={{
-    padding: '3px 10px', borderRadius: theme.radius.full,
-    fontSize: 12, fontWeight: 500,
-    color: r.leave_type === 'unpaid' ? '#7c3aed' : '#1d4ed8',
-    background: r.leave_type === 'unpaid' ? '#f5f3ff' : '#eff6ff',
-    border: `1px solid ${r.leave_type === 'unpaid' ? '#ddd6fe' : '#bfdbfe'}`,
-  }}>{r.leave_type === 'unpaid' ? 'Unpaid' : 'Holiday'}</span>
-</td>
+                      <span style={{
+                        padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 12, fontWeight: 500,
+                        color: r.leave_type === 'unpaid' ? '#7c3aed' : '#1d4ed8',
+                        background: r.leave_type === 'unpaid' ? '#f5f3ff' : '#eff6ff',
+                        border: `1px solid ${r.leave_type === 'unpaid' ? '#ddd6fe' : '#bfdbfe'}`,
+                      }}>{r.leave_type === 'unpaid' ? 'Unpaid' : 'Holiday'}</span>
+                    </td>
                     <td style={{ ...tdStyle, color: theme.colors.textSecondary }}>{r.reason || '—'}</td>
                     <td style={tdStyle}>
                       <span style={{
@@ -238,17 +237,20 @@ function getUnpaidDaysUsed(employeeId) {
               </thead>
               <tbody>
                 {employees.length === 0 && (
-                  <tr><td colSpan={3} style={{ padding: '28px 20px', color: theme.colors.textMuted, fontSize: 14 }}>
+                  <tr><td colSpan={4} style={{ padding: '28px 20px', color: theme.colors.textMuted, fontSize: 14 }}>
                     No employees yet.
                   </td></tr>
                 )}
                 {employees.map(emp => (
-  <EmployeeRow key={emp.id} emp={emp}
-    current={allowances[emp.id]?.total ?? ''}
-    currentUnpaid={allowances[emp.id]?.unpaid ?? ''}
-    onSave={setAllowance}
-    getInitials={getInitials} />
-))}
+                  <EmployeeRow
+                    key={emp.id}
+                    emp={emp}
+                    current={allowances[emp.id]?.total ?? ''}
+                    currentUnpaid={allowances[emp.id]?.unpaid ?? ''}
+                    onSave={setAllowance}
+                    getInitials={getInitials}
+                  />
+                ))}
               </tbody>
             </table>
           )}
@@ -264,13 +266,15 @@ function getUnpaidDaysUsed(employeeId) {
               </thead>
               <tbody>
                 {employees.length === 0 && (
-                  <tr><td colSpan={5} style={{ padding: '28px 20px', color: theme.colors.textMuted, fontSize: 14 }}>
+                  <tr><td colSpan={7} style={{ padding: '28px 20px', color: theme.colors.textMuted, fontSize: 14 }}>
                     No employees yet.
                   </td></tr>
                 )}
                 {employees.map(emp => {
                   const total = allowances[emp.id]?.total ?? null
+                  const unpaidTotal = allowances[emp.id]?.unpaid ?? null
                   const used = getDaysUsed(emp.id)
+                  const unpaidUsed = getUnpaidDaysUsed(emp.id)
                   const remaining = getDaysRemaining(emp.id)
                   const pending = requests.filter(r => r.employee_id === emp.id && r.status === 'pending').length
                   return (
@@ -282,27 +286,14 @@ function getUnpaidDaysUsed(employeeId) {
                             border: `1px solid ${theme.colors.border}`,
                             borderRadius: theme.radius.full, display: 'flex',
                             alignItems: 'center', justifyContent: 'center',
-                            fontSize: 10, fontWeight: 600, color: theme.colors.textSecondary,
-                            flexShrink: 0,
+                            fontSize: 10, fontWeight: 600, color: theme.colors.textSecondary, flexShrink: 0,
                           }}>{getInitials(emp.full_name)}</div>
                           {emp.full_name}
                         </div>
                       </td>
                       <td style={tdStyle}>
-  {allowances[emp.id]?.unpaid != null
-    ? <span style={{
-        padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 12, fontWeight: 500,
-        color: '#7c3aed', background: '#f5f3ff', border: '1px solid #ddd6fe',
-      }}>{allowances[emp.id].unpaid} days</span>
-    : <span style={{ color: theme.colors.textMuted }}>—</span>
-  }
-</td>
-<td style={tdStyle}>
-  <span style={{
-    padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 12, fontWeight: 500,
-    color: '#7c3aed', background: '#f5f3ff', border: '1px solid #ddd6fe',
-  }}>{getUnpaidDaysUsed(emp.id)} days</span>
-</td>
+                        {total !== null ? total : <span style={{ color: theme.colors.textMuted }}>Not set</span>}
+                      </td>
                       <td style={tdStyle}>{used}</td>
                       <td style={tdStyle}>
                         {remaining !== null ? (
@@ -313,6 +304,21 @@ function getUnpaidDaysUsed(employeeId) {
                             border: `1px solid ${remaining < 5 ? theme.colors.dangerBorder : theme.colors.successBorder}`,
                           }}>{remaining} days</span>
                         ) : <span style={{ color: theme.colors.textMuted }}>—</span>}
+                      </td>
+                      <td style={tdStyle}>
+                        {unpaidTotal !== null
+                          ? <span style={{
+                              padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 12, fontWeight: 500,
+                              color: '#7c3aed', background: '#f5f3ff', border: '1px solid #ddd6fe',
+                            }}>{unpaidTotal} days</span>
+                          : <span style={{ color: theme.colors.textMuted }}>—</span>
+                        }
+                      </td>
+                      <td style={tdStyle}>
+                        <span style={{
+                          padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 12, fontWeight: 500,
+                          color: '#7c3aed', background: '#f5f3ff', border: '1px solid #ddd6fe',
+                        }}>{unpaidUsed} days</span>
                       </td>
                       <td style={tdStyle}>
                         {pending > 0
@@ -330,6 +336,7 @@ function getUnpaidDaysUsed(employeeId) {
               </tbody>
             </table>
           )}
+
         </div>
       </div>
     </div>
@@ -363,6 +370,11 @@ function EmployeeRow({ emp, current, currentUnpaid, onSave, getInitials }) {
               borderRadius: theme.radius.md, fontSize: 13, outline: 'none', background: '#fff',
             }} />
           <span style={{ fontSize: 13, color: theme.colors.textMuted }}>days</span>
+          <button onClick={() => onSave(emp.id, days, unpaidDays)} style={{
+            padding: '7px 14px', background: theme.colors.primary,
+            color: 'white', border: 'none', borderRadius: theme.radius.md,
+            fontSize: 12, fontWeight: 600,
+          }}>Save</button>
         </div>
       </td>
       <td style={tdStyle}>
@@ -370,15 +382,15 @@ function EmployeeRow({ emp, current, currentUnpaid, onSave, getInitials }) {
           <input type="number" min="0" max="365" value={unpaidDays}
             onChange={e => setUnpaidDays(e.target.value)}
             style={{
-              width: 72, padding: '7px 10px', border: `1px solid #ede9fe}`,
+              width: 72, padding: '7px 10px', border: `1px solid #ddd6fe`,
               borderRadius: theme.radius.md, fontSize: 13, outline: 'none', background: '#faf5ff',
             }} />
           <span style={{ fontSize: 13, color: theme.colors.textMuted }}>days</span>
           <button onClick={() => onSave(emp.id, days, unpaidDays)} style={{
-            padding: '7px 14px', background: theme.colors.primary,
+            padding: '7px 14px', background: '#7c3aed',
             color: 'white', border: 'none', borderRadius: theme.radius.md,
             fontSize: 12, fontWeight: 600,
-          }}>Save both</button>
+          }}>Save</button>
         </div>
       </td>
     </tr>
