@@ -33,7 +33,10 @@ export default function ManagerDashboard({ profile }) {
     await supabase.from('holiday_requests').update({ status }).eq('id', id)
     fetchAll()
   }
-
+  async function cancelRequest(id) {
+  await supabase.from('holiday_requests').delete().eq('id', id)
+  fetchAll()
+}
   async function setAllowance(employeeId, days) {
     await supabase.from('holiday_allowances').upsert(
       { employee_id: employeeId, year: currentYear, total_days: parseInt(days) },
@@ -59,8 +62,9 @@ export default function ManagerDashboard({ profile }) {
     reject: { padding: '5px 12px', background: '#ef4444', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13 },
     input: { width: 70, padding: '6px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14 },
     save: { padding: '6px 12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', marginLeft: 8, fontSize: 13 },
+    cancel: { padding: '5px 12px', background: 'white', color: '#888', border: '1px solid #ddd', borderRadius: 6, cursor: 'pointer', fontSize: 13 },
   }
-
+    
   const statusColor = { pending: '#f59e0b', approved: '#10b981', rejected: '#ef4444' }
 
   return (
@@ -105,11 +109,14 @@ export default function ManagerDashboard({ profile }) {
                     </span>
                   </td>
                   <td style={s.td}>
-                    {r.status === 'pending' && <>
-                      <button style={s.approve} onClick={() => updateStatus(r.id, 'approved')}>Approve</button>
-                      <button style={s.reject} onClick={() => updateStatus(r.id, 'rejected')}>Reject</button>
-                    </>}
-                  </td>
+  {r.status === 'pending' && <>
+    <button style={s.approve} onClick={() => updateStatus(r.id, 'approved')}>Approve</button>
+    <button style={s.reject} onClick={() => updateStatus(r.id, 'rejected')}>Reject</button>
+  </>}
+  {(r.status === 'approved' || r.status === 'rejected') &&
+  <button style={s.cancel} onClick={() => cancelRequest(r.id)}>Cancel</button>
+}
+</td>
                 </tr>
               ))}
             </tbody>
