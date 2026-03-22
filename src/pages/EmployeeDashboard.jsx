@@ -12,7 +12,23 @@ export default function EmployeeDashboard({ profile }) {
 
   const currentYear = new Date().getFullYear()
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => {
+  fetchData()
+
+  const channel = supabase
+    .channel('request-changes')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'holiday_requests',
+      filter: `employee_id=eq.${profile.id}`
+    }, () => {
+      fetchData()
+    })
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
+}, [])
 
   async function fetchData() {
     const { data: allowanceData } = await supabase
