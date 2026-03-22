@@ -42,10 +42,16 @@ setAllowances(map)
 }
 
   function getDaysUsed(employeeId) {
-    return requests
-      .filter(r => r.employee_id === employeeId && r.status === 'approved')
-      .reduce((sum, r) => sum + r.days_requested, 0)
-  }
+  return requests
+    .filter(r => r.employee_id === employeeId && r.status === 'approved' && r.leave_type === 'holiday')
+    .reduce((sum, r) => sum + r.days_requested, 0)
+}
+
+function getUnpaidDaysUsed(employeeId) {
+  return requests
+    .filter(r => r.employee_id === employeeId && r.status === 'approved' && r.leave_type === 'unpaid')
+    .reduce((sum, r) => sum + r.days_requested, 0)
+}
 
   function getDaysRemaining(employeeId) {
   const total = allowances[employeeId]?.total ?? null
@@ -251,7 +257,7 @@ setAllowances(map)
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#fafafa' }}>
-                  {['Name', 'Holiday entitled', 'Holiday used', 'Holiday remaining', 'Unpaid entitled', 'Pending'].map(h => (
+                  {['Name', 'Holiday entitled', 'Holiday used', 'Holiday remaining', 'Unpaid entitled', 'Unpaid used', 'Pending'].map(h => (
                     <th key={h} style={thStyle}>{h}</th>
                   ))}
                 </tr>
@@ -290,6 +296,12 @@ setAllowances(map)
       }}>{allowances[emp.id].unpaid} days</span>
     : <span style={{ color: theme.colors.textMuted }}>—</span>
   }
+</td>
+<td style={tdStyle}>
+  <span style={{
+    padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 12, fontWeight: 500,
+    color: '#7c3aed', background: '#f5f3ff', border: '1px solid #ddd6fe',
+  }}>{getUnpaidDaysUsed(emp.id)} days</span>
 </td>
                       <td style={tdStyle}>{used}</td>
                       <td style={tdStyle}>

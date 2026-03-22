@@ -42,8 +42,12 @@ export default function EmployeeDashboard({ profile }) {
   }
 
   const daysUsed = requests
-    .filter(r => r.status === 'approved')
-    .reduce((sum, r) => sum + r.days_requested, 0)
+  .filter(r => r.status === 'approved' && r.leave_type === 'holiday')
+  .reduce((sum, r) => sum + r.days_requested, 0)
+
+const unpaidDaysUsed = requests
+  .filter(r => r.status === 'approved' && r.leave_type === 'unpaid')
+  .reduce((sum, r) => sum + r.days_requested, 0)
   const daysRemaining = allowance ? allowance.total_days - daysUsed : null
 
   async function submitRequest(e) {
@@ -130,10 +134,15 @@ if (leaveType === 'unpaid' && allowance && days > allowance.unpaid_days) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 24 }}>
           {[
-            { label: 'Holiday entitlement', value: allowance ? allowance.total_days : '—', color: theme.colors.text },
-{ label: 'Holiday remaining', value: daysRemaining !== null ? daysRemaining : '—',
+            { label: 'Holiday remaining', 
+  value: daysRemaining !== null ? daysRemaining : '—',
   color: daysRemaining !== null && daysRemaining < 5 ? theme.colors.danger : theme.colors.success },
-{ label: 'Unpaid leave allowed', value: allowance ? allowance.unpaid_days : '—', color: '#7c3aed' },
+{ label: 'Holiday entitlement', 
+  value: allowance ? allowance.total_days : '—', 
+  color: theme.colors.text },
+{ label: 'Unpaid leave remaining', 
+  value: allowance ? allowance.unpaid_days - unpaidDaysUsed : '—', 
+  color: '#7c3aed' },
           ].map((s, i) => (
             <div key={i} style={{
               background: theme.colors.surface, borderRadius: theme.radius.lg,
