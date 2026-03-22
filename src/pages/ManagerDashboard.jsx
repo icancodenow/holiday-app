@@ -17,8 +17,8 @@ export default function ManagerDashboard({ profile }) {
     const { data: emps } = await supabase.rpc('get_all_profiles')
     setEmployees(emps?.filter(e => e.role === 'employee') || [])
     const { data: alws } = await supabase
-      .from('holiday_allowances').select('*').eq('year', currentYear)
-    const map = {}
+  .from('holiday_allowances').select('*').eq('year', currentYear)
+const map = {}
 alws?.forEach(a => { map[a.employee_id] = { total: a.total_days, unpaid: a.unpaid_days } })
 setAllowances(map)
   }
@@ -263,7 +263,7 @@ setAllowances(map)
                   </td></tr>
                 )}
                 {employees.map(emp => {
-                  const total = allowances[emp.id] ?? null
+                  const total = allowances[emp.id]?.total ?? null
                   const used = getDaysUsed(emp.id)
                   const remaining = getDaysRemaining(emp.id)
                   const pending = requests.filter(r => r.employee_id === emp.id && r.status === 'pending').length
