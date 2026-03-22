@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
+import { theme, statusColor, statusBg } from '../theme'
 
 export default function EmployeeDashboard({ profile }) {
   const [allowance, setAllowance] = useState(null)
@@ -9,41 +10,28 @@ export default function EmployeeDashboard({ profile }) {
   const [reason, setReason] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-
   const currentYear = new Date().getFullYear()
 
   useEffect(() => {
-  fetchData()
-
-  const channel = supabase
-    .channel('request-changes')
-    .on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'holiday_requests',
-      filter: `employee_id=eq.${profile.id}`
-    }, () => {
-      fetchData()
-    })
-    .subscribe()
-
-  return () => supabase.removeChannel(channel)
-}, [])
+    fetchData()
+    const channel = supabase
+      .channel('request-changes')
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'holiday_requests',
+        filter: `employee_id=eq.${profile.id}`
+      }, () => fetchData())
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [])
 
   async function fetchData() {
     const { data: allowanceData } = await supabase
-      .from('holiday_allowances')
-      .select('*')
-      .eq('employee_id', profile.id)
-      .eq('year', currentYear)
-      .single()
+      .from('holiday_allowances').select('*')
+      .eq('employee_id', profile.id).eq('year', currentYear).single()
     setAllowance(allowanceData)
-
     const { data: requestData } = await supabase
-      .from('holiday_requests')
-      .select('*')
-      .eq('employee_id', profile.id)
-      .order('created_at', { ascending: false })
+      .from('holiday_requests').select('*')
+      .eq('employee_id', profile.id).order('created_at', { ascending: false })
     setRequests(requestData || [])
   }
 
@@ -52,10 +40,7 @@ export default function EmployeeDashboard({ profile }) {
     return Math.round((e - s) / (1000 * 60 * 60 * 24)) + 1
   }
 
-  const daysUsed = requests
-    .filter(r => r.status === 'approved')
-    .reduce((sum, r) => sum + r.days_requested, 0)
-
+  const daysUsed = requests.filter(r => r.status === 'approved').reduce((sum, r) => sum + r.days_requested, 0)
   const daysRemaining = allowance ? allowance.total_days - daysUsed : null
 
   async function submitRequest(e) {
@@ -68,124 +53,183 @@ export default function EmployeeDashboard({ profile }) {
       setMessage(`You only have ${daysRemaining} days remaining.`); setLoading(false); return
     }
     const { error } = await supabase.from('holiday_requests').insert({
-      employee_id: profile.id,
-      start_date: startDate,
-      end_date: endDate,
-      days_requested: days,
-      reason
+      employee_id: profile.id, start_date: startDate,
+      end_date: endDate, days_requested: days, reason
     })
     if (error) setMessage(error.message)
-    else { setMessage('Request submitted!'); setStartDate(''); setEndDate(''); setReason(''); fetchData() }
+    else { setMessage('Request submitted successfully!'); setStartDate(''); setEndDate(''); setReason(''); fetchData() }
     setLoading(false)
   }
-   async function cancelRequest(id) {
-  await supabase.from('holiday_requests').delete().eq('id', id)
-  fetchData()
-}
+
+  async function cancelRequest(id) {
+    await supabase.from('holiday_requests').delete().eq('id', id)
+    fetchData()
+  }
+
   async function handleLogout() { await supabase.auth.signOut() }
 
-  const s = {
-    page: { minHeight: '100vh', background: '#f5f5f5', padding: 32 },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 },
-    title: { margin: 0, fontSize: 22, fontWeight: 600 },
-    logout: { padding: '8px 16px', background: 'white', border: '1px solid #ddd', borderRadius: 8, cursor: 'pointer' },
-    grid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 28 },
-    card: { background: 'white', padding: 24, borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' },
-    cardLabel: { fontSize: 13, color: '#888', marginBottom: 6 },
-    cardValue: { fontSize: 32, fontWeight: 700 },
-    form: { background: 'white', padding: 28, borderRadius: 12, marginBottom: 28, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' },
-    formTitle: { margin: '0 0 18px', fontSize: 17, fontWeight: 600 },
-    row: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 },
-    input: { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box' },
-    textarea: { width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, boxSizing: 'border-box', marginBottom: 12 },
-    button: { padding: '10px 24px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 500 },
-    message: { marginTop: 12, fontSize: 14, color: '#0369a1' },
-    table: { width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' },
-    th: { textAlign: 'left', padding: '12px 16px', fontSize: 13, color: '#888', borderBottom: '1px solid #eee' },
-    td: { padding: '12px 16px', fontSize: 14, borderBottom: '1px solid #f0f0f0' },
-  }
-
-  const statusColor = { pending: '#f59e0b', approved: '#10b981', rejected: '#ef4444' }
-
   return (
-    <div style={s.page}>
-      <div style={s.header}>
-        <h1 style={s.title}>Hi, {profile.full_name} 👋</h1>
-        <button style={s.logout} onClick={handleLogout}>Log out</button>
+    <div style={{ minHeight: '100vh', background: theme.colors.background, fontFamily: theme.font.sans }}>
+
+      {/* Top nav */}
+      <div style={{
+        background: theme.colors.surface, borderBottom: `1px solid ${theme.colors.borderLight}`,
+        padding: '0 32px', display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', height: 64,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 22 }}>🌴</span>
+          <span style={{ fontWeight: 600, fontSize: 16 }}>Holiday Manager</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <span style={{ fontSize: 14, color: theme.colors.textSecondary }}>
+            {profile.full_name}
+          </span>
+          <button onClick={handleLogout} style={{
+            padding: '7px 16px', background: 'white',
+            border: `1.5px solid ${theme.colors.border}`,
+            borderRadius: theme.radius.full, fontSize: 13,
+            cursor: 'pointer', fontWeight: 500, color: theme.colors.textSecondary,
+          }}>Log out</button>
+        </div>
       </div>
 
-      <div style={s.grid}>
-        <div style={s.card}>
-          <div style={s.cardLabel}>Total allowance ({currentYear})</div>
-          <div style={s.cardValue}>{allowance ? allowance.total_days : '—'}</div>
-        </div>
-        <div style={s.card}>
-          <div style={s.cardLabel}>Days used</div>
-          <div style={s.cardValue}>{daysUsed}</div>
-        </div>
-        <div style={s.card}>
-          <div style={s.cardLabel}>Days remaining</div>
-          <div style={{ ...s.cardValue, color: daysRemaining < 5 ? '#ef4444' : '#10b981' }}>
-            {daysRemaining !== null ? daysRemaining : '—'}
-          </div>
-        </div>
-      </div>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '36px 24px' }}>
 
-      <div style={s.form}>
-        <h2 style={s.formTitle}>Request holiday</h2>
-        <form onSubmit={submitRequest}>
-          <div style={s.row}>
-            <div>
-              <div style={{ fontSize: 13, marginBottom: 4, color: '#555' }}>Start date</div>
-              <input style={s.input} type="date" value={startDate} onChange={e => setStartDate(e.target.value)} required />
+        {/* Greeting */}
+        <div style={{ marginBottom: 28 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 600 }}>Hi, {profile.full_name} 👋</h1>
+          <p style={{ color: theme.colors.textSecondary, marginTop: 4, fontSize: 14 }}>
+            Here's your holiday summary for {currentYear}
+          </p>
+        </div>
+
+        {/* Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 28 }}>
+          {[
+            { label: 'Total entitlement', value: allowance ? allowance.total_days : '—', color: theme.colors.text },
+            { label: 'Days taken', value: daysUsed, color: theme.colors.text },
+            { label: 'Days remaining', value: daysRemaining !== null ? daysRemaining : '—',
+              color: daysRemaining !== null && daysRemaining < 5 ? theme.colors.danger : theme.colors.success },
+          ].map((stat, i) => (
+            <div key={i} style={{
+              background: theme.colors.surface, borderRadius: theme.radius.lg,
+              padding: '24px 28px', boxShadow: theme.shadow.sm,
+              border: `1px solid ${theme.colors.borderLight}`,
+            }}>
+              <div style={{ fontSize: 13, color: theme.colors.textSecondary, marginBottom: 8, fontWeight: 500 }}>
+                {stat.label}
+              </div>
+              <div style={{ fontSize: 36, fontWeight: 700, color: stat.color }}>{stat.value}</div>
             </div>
-            <div>
-              <div style={{ fontSize: 13, marginBottom: 4, color: '#555' }}>End date</div>
-              <input style={s.input} type="date" value={endDate} onChange={e => setEndDate(e.target.value)} required />
-            </div>
-          </div>
-          <textarea style={s.textarea} placeholder="Reason (optional)" value={reason}
-            onChange={e => setReason(e.target.value)} rows={3} />
-          <button style={s.button} disabled={loading}>{loading ? 'Submitting...' : 'Submit request'}</button>
-          {message && <div style={s.message}>{message}</div>}
-        </form>
-      </div>
-
-      <table style={s.table}>
-        <thead>
-          <tr>
-            <th style={s.th}>Start</th><th style={s.th}>End</th>
-            <th style={s.th}>Days</th><th style={s.th}>Reason</th><th style={s.th}>Status</th>
-<th style={s.th}>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {requests.length === 0 && (
-            <tr><td style={s.td} colSpan={5}>No requests yet.</td></tr>
-          )}
-          {requests.map(r => (
-            <tr key={r.id}>
-              <td style={s.td}>{r.start_date}</td>
-              <td style={s.td}>{r.end_date}</td>
-              <td style={s.td}>{r.days_requested}</td>
-              <td style={s.td}>{r.reason || '—'}</td>
-              <td style={s.td}>
-  <span style={{ color: statusColor[r.status], fontWeight: 500, textTransform: 'capitalize' }}>
-    {r.status}
-  </span>
-</td>
-<td style={s.td}>
-  {r.status === 'pending' &&
-    <button onClick={() => cancelRequest(r.id)}
-      style={{ padding: '5px 12px', background: 'white', color: '#ef4444', border: '1px solid #ef4444', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>
-      Cancel
-    </button>
-  }
-</td>
-            </tr>
           ))}
-        </tbody>
-      </table>
+        </div>
+
+        {/* Request form */}
+        <div style={{
+          background: theme.colors.surface, borderRadius: theme.radius.lg,
+          padding: 28, marginBottom: 28, boxShadow: theme.shadow.sm,
+          border: `1px solid ${theme.colors.borderLight}`,
+        }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20 }}>Request holiday</h2>
+          <form onSubmit={submitRequest}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+              <div>
+                <label style={labelStyle}>Start date</label>
+                <input style={inputStyle} type="date" value={startDate}
+                  onChange={e => setStartDate(e.target.value)} required />
+              </div>
+              <div>
+                <label style={labelStyle}>End date</label>
+                <input style={inputStyle} type="date" value={endDate}
+                  onChange={e => setEndDate(e.target.value)} required />
+              </div>
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <label style={labelStyle}>Reason (optional)</label>
+              <textarea style={{ ...inputStyle, resize: 'vertical' }} rows={3}
+                placeholder="e.g. Family holiday" value={reason}
+                onChange={e => setReason(e.target.value)} />
+            </div>
+            <button style={{
+              padding: '11px 28px', background: theme.colors.primary,
+              color: 'white', border: 'none', borderRadius: theme.radius.md,
+              fontSize: 14, fontWeight: 600, cursor: 'pointer',
+            }}>Submit request</button>
+            {message && (
+              <div style={{
+                marginTop: 14, padding: '10px 14px', borderRadius: theme.radius.sm,
+                fontSize: 13, background: theme.colors.primaryLight,
+                color: theme.colors.primary, border: '1px solid #fed7aa',
+              }}>{message}</div>
+            )}
+          </form>
+        </div>
+
+        {/* Requests table */}
+        <div style={{
+          background: theme.colors.surface, borderRadius: theme.radius.lg,
+          boxShadow: theme.shadow.sm, border: `1px solid ${theme.colors.borderLight}`,
+          overflow: 'hidden',
+        }}>
+          <div style={{ padding: '20px 24px', borderBottom: `1px solid ${theme.colors.borderLight}` }}>
+            <h2 style={{ fontSize: 16, fontWeight: 600 }}>My requests</h2>
+          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#fafaf9' }}>
+                {['Start', 'End', 'Days', 'Reason', 'Status', ''].map(h => (
+                  <th key={h} style={{
+                    textAlign: 'left', padding: '11px 20px',
+                    fontSize: 12, fontWeight: 600, color: theme.colors.textMuted,
+                    textTransform: 'uppercase', letterSpacing: '0.05em',
+                    borderBottom: `1px solid ${theme.colors.borderLight}`,
+                  }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {requests.length === 0 && (
+                <tr><td colSpan={6} style={{ padding: '32px 20px', color: theme.colors.textMuted, fontSize: 14 }}>
+                  No requests yet.
+                </td></tr>
+              )}
+              {requests.map(r => (
+                <tr key={r.id} style={{ borderBottom: `1px solid ${theme.colors.borderLight}` }}>
+                  <td style={tdStyle}>{r.start_date}</td>
+                  <td style={tdStyle}>{r.end_date}</td>
+                  <td style={tdStyle}>{r.days_requested}</td>
+                  <td style={tdStyle}>{r.reason || '—'}</td>
+                  <td style={tdStyle}>
+                    <span style={{
+                      padding: '4px 10px', borderRadius: theme.radius.full, fontSize: 12, fontWeight: 500,
+                      color: statusColor[r.status], background: statusBg[r.status],
+                    }}>{r.status}</span>
+                  </td>
+                  <td style={tdStyle}>
+                    {r.status === 'pending' && (
+                      <button onClick={() => cancelRequest(r.id)} style={{
+                        padding: '5px 12px', background: 'white',
+                        color: theme.colors.danger,
+                        border: `1.5px solid ${theme.colors.danger}`,
+                        borderRadius: theme.radius.full, fontSize: 12,
+                        cursor: 'pointer', fontWeight: 500,
+                      }}>Cancel</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }
+
+const labelStyle = { display: 'block', fontSize: 13, fontWeight: 500, color: '#57534e', marginBottom: 6 }
+const inputStyle = {
+  width: '100%', padding: '10px 14px', border: '1.5px solid #e8e0d8',
+  borderRadius: '10px', fontSize: 14, outline: 'none', background: '#fffbf7',
+}
+const tdStyle = { padding: '13px 20px', fontSize: 14, color: '#1c1917' }
