@@ -32,7 +32,13 @@ export default function ManagerDashboard({ profile }) {
     await supabase.from('holiday_requests').delete().eq('id', id)
     fetchAll()
   }
-
+  
+  async function deleteEmployee(employeeId) {
+  if (!window.confirm('Are you sure you want to delete this employee? This cannot be undone.')) return
+  await supabase.rpc('delete_employee', { employee_id: employeeId })
+  fetchAll()
+}
+  
   async function setAllowance(employeeId, days, unpaidDays) {
     await supabase.from('holiday_allowances').upsert(
       { employee_id: employeeId, year: currentYear, total_days: parseInt(days), unpaid_days: parseInt(unpaidDays) },
@@ -350,18 +356,25 @@ export default function ManagerDashboard({ profile }) {
                           <div style={{ fontSize: 11, color: theme.colors.textMuted }}>{emp.email}</div>
                         </div>
                       </div>
-                      {pending > 0
-                        ? <span style={{
-                            padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500,
-                            color: theme.colors.warning, background: theme.colors.warningLight,
-                            border: `1px solid ${theme.colors.warningBorder}`,
-                          }}>{pending} pending</span>
-                        : <span style={{
-                            padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 11,
-                            color: theme.colors.textMuted, background: theme.colors.borderLight,
-                            border: `1px solid ${theme.colors.border}`,
-                          }}>No pending</span>
-                      }
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+  {pending > 0
+    ? <span style={{
+        padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500,
+        color: theme.colors.warning, background: theme.colors.warningLight,
+        border: `1px solid ${theme.colors.warningBorder}`,
+      }}>{pending} pending</span>
+    : <span style={{
+        padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 11,
+        color: theme.colors.textMuted, background: theme.colors.borderLight,
+        border: `1px solid ${theme.colors.border}`,
+      }}>No pending</span>
+  }
+  <button onClick={() => deleteEmployee(emp.id)} style={{
+    padding: '4px 12px', background: theme.colors.dangerLight,
+    color: theme.colors.danger, border: `1px solid ${theme.colors.dangerBorder}`,
+    borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500, cursor: 'pointer',
+  }}>Delete</button>
+</div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
