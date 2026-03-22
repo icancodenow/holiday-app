@@ -11,25 +11,23 @@ export default function ManagerDashboard({ profile }) {
   useEffect(() => { fetchAll() }, [])
 
   async function fetchAll() {
-    const { data: reqs } = await supabase
-      .from('holiday_requests')
-      .select('*, profiles(full_name, email)')
-      .order('created_at', { ascending: false })
-    setRequests(reqs || [])
+  const { data: reqs } = await supabase
+    .rpc('get_all_requests')
+    .order('created_at', { ascending: false })
+  setRequests(reqs || [])
 
-    const { data: emps } = await supabase
-      .rpc('get_all_profiles')
-      .eq('role', 'employee')
-    setEmployees(emps || [])
+  const { data: emps } = await supabase
+    .rpc('get_all_profiles')
+  setEmployees(emps?.filter(e => e.role === 'employee') || [])
 
-    const { data: alws } = await supabase
-      .from('holiday_allowances')
-      .select('*')
-      .eq('year', currentYear)
-    const map = {}
-    alws?.forEach(a => { map[a.employee_id] = a.total_days })
-    setAllowances(map)
-  }
+  const { data: alws } = await supabase
+    .from('holiday_allowances')
+    .select('*')
+    .eq('year', currentYear)
+  const map = {}
+  alws?.forEach(a => { map[a.employee_id] = a.total_days })
+  setAllowances(map)
+}
 
   async function updateStatus(id, status) {
     await supabase.from('holiday_requests').update({ status }).eq('id', id)
@@ -96,7 +94,7 @@ export default function ManagerDashboard({ profile }) {
               {requests.length === 0 && <tr><td style={s.td} colSpan={7}>No requests yet.</td></tr>}
               {requests.map(r => (
                 <tr key={r.id}>
-                  <td style={s.td}>{r.profiles?.full_name}</td>
+                  <td style={s.td}>{r.full_name}</td>
                   <td style={s.td}>{r.start_date}</td>
                   <td style={s.td}>{r.end_date}</td>
                   <td style={s.td}>{r.days_requested}</td>
