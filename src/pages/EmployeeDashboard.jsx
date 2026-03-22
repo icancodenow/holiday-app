@@ -62,7 +62,10 @@ export default function EmployeeDashboard({ profile }) {
     else { setMessage('Request submitted!'); setStartDate(''); setEndDate(''); setReason(''); fetchData() }
     setLoading(false)
   }
-
+   async function cancelRequest(id) {
+  await supabase.from('holiday_requests').delete().eq('id', id)
+  fetchData()
+}
   async function handleLogout() { await supabase.auth.signOut() }
 
   const s = {
@@ -137,6 +140,7 @@ export default function EmployeeDashboard({ profile }) {
           <tr>
             <th style={s.th}>Start</th><th style={s.th}>End</th>
             <th style={s.th}>Days</th><th style={s.th}>Reason</th><th style={s.th}>Status</th>
+<th style={s.th}>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -150,10 +154,18 @@ export default function EmployeeDashboard({ profile }) {
               <td style={s.td}>{r.days_requested}</td>
               <td style={s.td}>{r.reason || '—'}</td>
               <td style={s.td}>
-                <span style={{ color: statusColor[r.status], fontWeight: 500, textTransform: 'capitalize' }}>
-                  {r.status}
-                </span>
-              </td>
+  <span style={{ color: statusColor[r.status], fontWeight: 500, textTransform: 'capitalize' }}>
+    {r.status}
+  </span>
+</td>
+<td style={s.td}>
+  {r.status === 'pending' &&
+    <button onClick={() => cancelRequest(r.id)}
+      style={{ padding: '5px 12px', background: 'white', color: '#ef4444', border: '1px solid #ef4444', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>
+      Cancel
+    </button>
+  }
+</td>
             </tr>
           ))}
         </tbody>

@@ -33,8 +33,26 @@ export default function ManagerDashboard({ profile }) {
     await supabase.from('holiday_requests').update({ status }).eq('id', id)
     fetchAll()
   }
-  async function cancelRequest(id) {
+  async function cancelRequest(id, status, employeeId, daysRequested) {
   await supabase.from('holiday_requests').delete().eq('id', id)
+
+  if (status === 'approved') {
+    const { data: allowance } = await supabase
+      .from('holiday_allowances')
+      .select('*')
+      .eq('employee_id', employeeId)
+      .eq('year', currentYear)
+      .single()
+
+    if (allowance) {
+      await supabase
+        .from('holiday_allowances')
+        .update({ total_days: allowance.total_days + daysRequested })
+        .eq('employee_id', employeeId)
+        .eq('year', currentYear)
+    }
+  }
+
   fetchAll()
 }
   async function setAllowance(employeeId, days) {
@@ -114,7 +132,7 @@ export default function ManagerDashboard({ profile }) {
     <button style={s.reject} onClick={() => updateStatus(r.id, 'rejected')}>Reject</button>
   </>}
   {(r.status === 'approved' || r.status === 'rejected') &&
-  <button style={s.cancel} onClick={() => cancelRequest(r.id)}>Cancel</button>
+  <button style={s.cancel} onClick={() => cancelRequest(r.id, r.status, r.employee_id, r.days_requested)}>Cancel</button>
 }
 </td>
                 </tr>
