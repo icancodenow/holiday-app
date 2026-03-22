@@ -363,11 +363,6 @@ function EmployeeRow({ emp, current, currentUnpaid, onSave, getInitials }) {
               borderRadius: theme.radius.md, fontSize: 13, outline: 'none', background: '#fff',
             }} />
           <span style={{ fontSize: 13, color: theme.colors.textMuted }}>days</span>
-          <button onClick={() => onSave(emp.id, days, unpaidDays)} style={{
-            padding: '7px 14px', background: theme.colors.primary,
-            color: 'white', border: 'none', borderRadius: theme.radius.md,
-            fontSize: 12, fontWeight: 600,
-          }}>Save</button>
         </div>
       </td>
       <td style={tdStyle}>
@@ -375,15 +370,15 @@ function EmployeeRow({ emp, current, currentUnpaid, onSave, getInitials }) {
           <input type="number" min="0" max="365" value={unpaidDays}
             onChange={e => setUnpaidDays(e.target.value)}
             style={{
-              width: 72, padding: '7px 10px', border: `1px solid ${theme.colors.border}`,
-              borderRadius: theme.radius.md, fontSize: 13, outline: 'none', background: '#fff',
+              width: 72, padding: '7px 10px', border: `1px solid #ede9fe}`,
+              borderRadius: theme.radius.md, fontSize: 13, outline: 'none', background: '#faf5ff',
             }} />
           <span style={{ fontSize: 13, color: theme.colors.textMuted }}>days</span>
           <button onClick={() => onSave(emp.id, days, unpaidDays)} style={{
-            padding: '7px 14px', background: '#7c3aed',
+            padding: '7px 14px', background: theme.colors.primary,
             color: 'white', border: 'none', borderRadius: theme.radius.md,
             fontSize: 12, fontWeight: 600,
-          }}>Save</button>
+          }}>Save both</button>
         </div>
       </td>
     </tr>
