@@ -10,6 +10,7 @@ export default function EmployeeDashboard({ profile }) {
   const [reason, setReason] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [leaveType, setLeaveType] = useState('holiday')
   const currentYear = new Date().getFullYear()
 
   useEffect(() => {
@@ -51,13 +52,14 @@ export default function EmployeeDashboard({ profile }) {
     setMessage('')
     const days = countDays(startDate, endDate)
     if (days <= 0) { setMessage('End date must be after start date.'); setLoading(false); return }
-    if (daysRemaining !== null && days > daysRemaining) {
-      setMessage(`You only have ${daysRemaining} days remaining.`); setLoading(false); return
-    }
+    if (leaveType === 'holiday' && daysRemaining !== null && days > daysRemaining) {
+  setMessage(`You only have ${daysRemaining} days remaining.`); setLoading(false); return
+}
     const { error } = await supabase.from('holiday_requests').insert({
-      employee_id: profile.id, start_date: startDate,
-      end_date: endDate, days_requested: days, reason
-    })
+  employee_id: profile.id, start_date: startDate,
+  end_date: endDate, days_requested: days, reason,
+  leave_type: leaveType
+})
     if (error) setMessage(error.message)
     else {
       setMessage('Request submitted successfully!')
@@ -163,12 +165,30 @@ export default function EmployeeDashboard({ profile }) {
                 <input style={inputStyle} type="date" value={endDate} onChange={e => setEndDate(e.target.value)} required />
               </div>
             </div>
-            <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>Reason (optional)</label>
-              <textarea style={{ ...inputStyle, resize: 'vertical' }} rows={2}
-                placeholder="e.g. Summer holiday"
-                value={reason} onChange={e => setReason(e.target.value)} />
-            </div>
+            <div style={{ marginBottom: 14 }}>
+  <label style={labelStyle}>Leave type</label>
+  <div style={{ display: 'flex', gap: 10 }}>
+    {['holiday', 'unpaid'].map(type => (
+      <button key={type} type="button"
+        onClick={() => setLeaveType(type)}
+        style={{
+          padding: '8px 20px', borderRadius: theme.radius.full,
+          fontSize: 13, fontWeight: 500, cursor: 'pointer',
+          border: `1px solid ${leaveType === type ? theme.colors.text : theme.colors.border}`,
+          background: leaveType === type ? theme.colors.text : 'white',
+          color: leaveType === type ? 'white' : theme.colors.textSecondary,
+        }}>
+        {type === 'holiday' ? 'Holiday' : 'Unpaid leave'}
+      </button>
+    ))}
+  </div>
+</div>
+<div style={{ marginBottom: 16 }}>
+  <label style={labelStyle}>Reason (optional)</label>
+  <textarea style={{ ...inputStyle, resize: 'vertical' }} rows={2}
+    placeholder={leaveType === 'unpaid' ? 'e.g. Personal matter' : 'e.g. Summer holiday'}
+    value={reason} onChange={e => setReason(e.target.value)} />
+</div>
             <button style={{
               padding: '10px 24px', background: theme.colors.primary,
               color: 'white', border: 'none', borderRadius: theme.radius.md,
@@ -191,7 +211,7 @@ export default function EmployeeDashboard({ profile }) {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#fafafa' }}>
-                {['Start', 'End', 'Days', 'Reason', 'Status', ''].map(h => (
+                {['Start', 'End', 'Days', 'Type', 'Reason', 'Status', ''].map(h => (
                   <th key={h} style={thStyle}>{h}</th>
                 ))}
               </tr>
@@ -207,6 +227,15 @@ export default function EmployeeDashboard({ profile }) {
                   <td style={tdStyle}>{r.start_date}</td>
                   <td style={tdStyle}>{r.end_date}</td>
                   <td style={tdStyle}>{r.days_requested}</td>
+                  <td style={tdStyle}>
+  <span style={{
+    padding: '3px 10px', borderRadius: theme.radius.full,
+    fontSize: 12, fontWeight: 500,
+    color: r.leave_type === 'unpaid' ? '#7c3aed' : '#1d4ed8',
+    background: r.leave_type === 'unpaid' ? '#f5f3ff' : '#eff6ff',
+    border: `1px solid ${r.leave_type === 'unpaid' ? '#ddd6fe' : '#bfdbfe'}`,
+  }}>{r.leave_type === 'unpaid' ? 'Unpaid' : 'Holiday'}</span>
+</td>
                   <td style={{ ...tdStyle, color: theme.colors.textSecondary }}>{r.reason || '—'}</td>
                   <td style={tdStyle}>
                     <span style={{

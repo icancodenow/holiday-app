@@ -158,7 +158,7 @@ export default function ManagerDashboard({ profile }) {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#fafafa' }}>
-                  {['Employee', 'Start', 'End', 'Days', 'Reason', 'Status', 'Actions'].map(h => (
+                  {['Employee', 'Start', 'End', 'Days', 'Type', 'Reason', 'Status', 'Actions'].map(h => (
                     <th key={h} style={thStyle}>{h}</th>
                   ))}
                 </tr>
@@ -187,6 +187,15 @@ export default function ManagerDashboard({ profile }) {
                     <td style={tdStyle}>{r.start_date}</td>
                     <td style={tdStyle}>{r.end_date}</td>
                     <td style={tdStyle}>{r.days_requested}</td>
+                    <td style={tdStyle}>
+  <span style={{
+    padding: '3px 10px', borderRadius: theme.radius.full,
+    fontSize: 12, fontWeight: 500,
+    color: r.leave_type === 'unpaid' ? '#7c3aed' : '#1d4ed8',
+    background: r.leave_type === 'unpaid' ? '#f5f3ff' : '#eff6ff',
+    border: `1px solid ${r.leave_type === 'unpaid' ? '#ddd6fe' : '#bfdbfe'}`,
+  }}>{r.leave_type === 'unpaid' ? 'Unpaid' : 'Holiday'}</span>
+</td>
                     <td style={{ ...tdStyle, color: theme.colors.textSecondary }}>{r.reason || '—'}</td>
                     <td style={tdStyle}>
                       <span style={{
