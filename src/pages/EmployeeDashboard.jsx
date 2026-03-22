@@ -53,7 +53,10 @@ export default function EmployeeDashboard({ profile }) {
     const days = countDays(startDate, endDate)
     if (days <= 0) { setMessage('End date must be after start date.'); setLoading(false); return }
     if (leaveType === 'holiday' && daysRemaining !== null && days > daysRemaining) {
-  setMessage(`You only have ${daysRemaining} days remaining.`); setLoading(false); return
+  setMessage(`You only have ${daysRemaining} holiday days remaining.`); setLoading(false); return
+}
+if (leaveType === 'unpaid' && allowance && days > allowance.unpaid_days) {
+  setMessage(`You only have ${allowance.unpaid_days} unpaid leave days allowed.`); setLoading(false); return
 }
     const { error } = await supabase.from('holiday_requests').insert({
   employee_id: profile.id, start_date: startDate,
@@ -127,13 +130,10 @@ export default function EmployeeDashboard({ profile }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 24 }}>
           {[
-            { label: 'Total entitlement', value: allowance ? allowance.total_days : '—', color: theme.colors.text },
-            { label: 'Days taken', value: daysUsed, color: theme.colors.text },
-            {
-              label: 'Days remaining',
-              value: daysRemaining !== null ? daysRemaining : '—',
-              color: daysRemaining !== null && daysRemaining < 5 ? theme.colors.danger : theme.colors.success
-            },
+            { label: 'Holiday entitlement', value: allowance ? allowance.total_days : '—', color: theme.colors.text },
+{ label: 'Holiday remaining', value: daysRemaining !== null ? daysRemaining : '—',
+  color: daysRemaining !== null && daysRemaining < 5 ? theme.colors.danger : theme.colors.success },
+{ label: 'Unpaid leave allowed', value: allowance ? allowance.unpaid_days : '—', color: '#7c3aed' },
           ].map((s, i) => (
             <div key={i} style={{
               background: theme.colors.surface, borderRadius: theme.radius.lg,

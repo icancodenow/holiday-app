@@ -19,8 +19,8 @@ export default function ManagerDashboard({ profile }) {
     const { data: alws } = await supabase
       .from('holiday_allowances').select('*').eq('year', currentYear)
     const map = {}
-    alws?.forEach(a => { map[a.employee_id] = a.total_days })
-    setAllowances(map)
+alws?.forEach(a => { map[a.employee_id] = { total: a.total_days, unpaid: a.unpaid_days } })
+setAllowances(map)
   }
 
   async function updateStatus(id, status) {
@@ -33,13 +33,13 @@ export default function ManagerDashboard({ profile }) {
     fetchAll()
   }
 
-  async function setAllowance(employeeId, days) {
-    await supabase.from('holiday_allowances').upsert(
-      { employee_id: employeeId, year: currentYear, total_days: parseInt(days) },
-      { onConflict: 'employee_id,year' }
-    )
-    fetchAll()
-  }
+  async function setAllowance(employeeId, days, unpaidDays) {
+  await supabase.from('holiday_allowances').upsert(
+    { employee_id: employeeId, year: currentYear, total_days: parseInt(days), unpaid_days: parseInt(unpaidDays) },
+    { onConflict: 'employee_id,year' }
+  )
+  fetchAll()
+}
 
   function getDaysUsed(employeeId) {
     return requests
@@ -48,10 +48,10 @@ export default function ManagerDashboard({ profile }) {
   }
 
   function getDaysRemaining(employeeId) {
-    const total = allowances[employeeId] ?? null
-    if (total === null) return null
-    return total - getDaysUsed(employeeId)
-  }
+  const total = allowances[employeeId]?.total ?? null
+  if (total === null) return null
+  return total - getDaysUsed(employeeId)
+}
 
   function getInitials(name) {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -225,7 +225,7 @@ export default function ManagerDashboard({ profile }) {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#fafafa' }}>
-                  {['Name', 'Email', `Allowance (${currentYear})`].map(h => (
+                  {['Name', 'Email', `Holiday days (${currentYear})`, `Unpaid days (${currentYear})`].map(h => (
                     <th key={h} style={thStyle}>{h}</th>
                   ))}
                 </tr>
@@ -237,11 +237,12 @@ export default function ManagerDashboard({ profile }) {
                   </td></tr>
                 )}
                 {employees.map(emp => (
-                  <EmployeeRow key={emp.id} emp={emp}
-                    current={allowances[emp.id] ?? ''}
-                    onSave={setAllowance}
-                    getInitials={getInitials} />
-                ))}
+  <EmployeeRow key={emp.id} emp={emp}
+    current={allowances[emp.id]?.total ?? ''}
+    currentUnpaid={allowances[emp.id]?.unpaid ?? ''}
+    onSave={setAllowance}
+    getInitials={getInitials} />
+))}
               </tbody>
             </table>
           )}
@@ -250,7 +251,7 @@ export default function ManagerDashboard({ profile }) {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#fafafa' }}>
-                  {['Name', 'Entitled', 'Used', 'Remaining', 'Pending'].map(h => (
+                  {['Name', 'Holiday entitled', 'Holiday used', 'Holiday remaining', 'Unpaid entitled', 'Pending'].map(h => (
                     <th key={h} style={thStyle}>{h}</th>
                   ))}
                 </tr>
@@ -281,7 +282,15 @@ export default function ManagerDashboard({ profile }) {
                           {emp.full_name}
                         </div>
                       </td>
-                      <td style={tdStyle}>{total ?? <span style={{ color: theme.colors.textMuted }}>Not set</span>}</td>
+                      <td style={tdStyle}>
+  {allowances[emp.id]?.unpaid != null
+    ? <span style={{
+        padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 12, fontWeight: 500,
+        color: '#7c3aed', background: '#f5f3ff', border: '1px solid #ddd6fe',
+      }}>{allowances[emp.id].unpaid} days</span>
+    : <span style={{ color: theme.colors.textMuted }}>—</span>
+  }
+</td>
                       <td style={tdStyle}>{used}</td>
                       <td style={tdStyle}>
                         {remaining !== null ? (
@@ -315,8 +324,9 @@ export default function ManagerDashboard({ profile }) {
   )
 }
 
-function EmployeeRow({ emp, current, onSave, getInitials }) {
+function EmployeeRow({ emp, current, currentUnpaid, onSave, getInitials }) {
   const [days, setDays] = useState(current)
+  const [unpaidDays, setUnpaidDays] = useState(currentUnpaid)
   return (
     <tr style={{ borderBottom: `1px solid ${theme.colors.borderLight}` }}>
       <td style={{ ...tdStyle, fontWeight: 500 }}>
@@ -341,8 +351,24 @@ function EmployeeRow({ emp, current, onSave, getInitials }) {
               borderRadius: theme.radius.md, fontSize: 13, outline: 'none', background: '#fff',
             }} />
           <span style={{ fontSize: 13, color: theme.colors.textMuted }}>days</span>
-          <button onClick={() => onSave(emp.id, days)} style={{
+          <button onClick={() => onSave(emp.id, days, unpaidDays)} style={{
             padding: '7px 14px', background: theme.colors.primary,
+            color: 'white', border: 'none', borderRadius: theme.radius.md,
+            fontSize: 12, fontWeight: 600,
+          }}>Save</button>
+        </div>
+      </td>
+      <td style={tdStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input type="number" min="0" max="365" value={unpaidDays}
+            onChange={e => setUnpaidDays(e.target.value)}
+            style={{
+              width: 72, padding: '7px 10px', border: `1px solid ${theme.colors.border}`,
+              borderRadius: theme.radius.md, fontSize: 13, outline: 'none', background: '#fff',
+            }} />
+          <span style={{ fontSize: 13, color: theme.colors.textMuted }}>days</span>
+          <button onClick={() => onSave(emp.id, days, unpaidDays)} style={{
+            padding: '7px 14px', background: '#7c3aed',
             color: 'white', border: 'none', borderRadius: theme.radius.md,
             fontSize: 12, fontWeight: 600,
           }}>Save</button>
