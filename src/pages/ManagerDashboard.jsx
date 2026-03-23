@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 import { theme, statusColor, statusBg, statusBorder } from '../theme'
+import { useIsMobile } from '../useIsMobile'
 
 export default function ManagerDashboard({ profile }) {
   const [requests, setRequests] = useState([])
@@ -8,6 +9,7 @@ export default function ManagerDashboard({ profile }) {
   const [allowances, setAllowances] = useState({})
   const [tab, setTab] = useState('requests')
   const currentYear = new Date().getFullYear()
+  const isMobile = useIsMobile()
 
   useEffect(() => { fetchAll() }, [])
 
@@ -32,13 +34,13 @@ export default function ManagerDashboard({ profile }) {
     await supabase.from('holiday_requests').delete().eq('id', id)
     fetchAll()
   }
-  
+
   async function deleteEmployee(employeeId) {
-  if (!window.confirm('Are you sure you want to delete this employee? This cannot be undone.')) return
-  await supabase.rpc('delete_employee', { employee_id: employeeId })
-  fetchAll()
-}
-  
+    if (!window.confirm('Are you sure you want to delete this employee? This cannot be undone.')) return
+    await supabase.rpc('delete_employee', { employee_id: employeeId })
+    fetchAll()
+  }
+
   async function setAllowance(employeeId, days, unpaidDays) {
     await supabase.from('holiday_allowances').upsert(
       { employee_id: employeeId, year: currentYear, total_days: parseInt(days), unpaid_days: parseInt(unpaidDays) },
@@ -103,7 +105,7 @@ export default function ManagerDashboard({ profile }) {
 
       <div style={{
         background: theme.colors.surface, borderBottom: `1px solid ${theme.colors.border}`,
-        padding: '0 24px', display: 'flex', alignItems: 'center',
+        padding: `0 ${isMobile ? 16 : 24}px`, display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', height: 56, flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -116,13 +118,13 @@ export default function ManagerDashboard({ profile }) {
               <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
           </div>
-          <span style={{ fontWeight: 600, fontSize: 14 }}>Holiday Manager</span>
-          <span style={{
+          {!isMobile && <span style={{ fontWeight: 600, fontSize: 14 }}>Holiday Manager</span>}
+          {!isMobile && <span style={{
             marginLeft: 4, padding: '2px 8px', background: theme.colors.borderLight,
             color: theme.colors.textSecondary, borderRadius: theme.radius.full,
             fontSize: 10, fontWeight: 600, border: `1px solid ${theme.colors.border}`,
             textTransform: 'uppercase', letterSpacing: '0.04em',
-          }}>Manager</span>
+          }}>Manager</span>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
@@ -131,7 +133,7 @@ export default function ManagerDashboard({ profile }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 10, fontWeight: 600, color: theme.colors.textSecondary,
           }}>{getInitials(profile.full_name)}</div>
-          <span style={{ fontSize: 13, color: theme.colors.textSecondary }}>{profile.full_name}</span>
+          {!isMobile && <span style={{ fontSize: 13, color: theme.colors.textSecondary }}>{profile.full_name}</span>}
           <button onClick={() => supabase.auth.signOut()} style={{
             padding: '5px 12px', background: 'white', border: `1px solid ${theme.colors.border}`,
             borderRadius: theme.radius.full, fontSize: 12,
@@ -140,40 +142,46 @@ export default function ManagerDashboard({ profile }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', flex: 1 }}>
+      <div style={{ display: 'flex', flex: 1, flexDirection: isMobile ? 'column' : 'row' }}>
 
         <div style={{
-          width: 220, background: theme.colors.surface,
-          borderRight: `1px solid ${theme.colors.border}`,
-          padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0,
+          width: isMobile ? '100%' : 220,
+          background: theme.colors.surface,
+          borderRight: isMobile ? 'none' : `1px solid ${theme.colors.border}`,
+          borderBottom: isMobile ? `1px solid ${theme.colors.border}` : 'none',
+          padding: isMobile ? '8px 12px' : '16px 12px',
+          display: 'flex', flexDirection: isMobile ? 'row' : 'column',
+          gap: isMobile ? 4 : 2, flexShrink: 0,
+          overflowX: isMobile ? 'auto' : 'visible',
         }}>
-          <div style={{
+          {!isMobile && <div style={{
             fontSize: 10, fontWeight: 600, color: theme.colors.textMuted,
             textTransform: 'uppercase', letterSpacing: '0.06em',
             padding: '6px 12px', marginBottom: 4,
-          }}>Navigation</div>
+          }}>Navigation</div>}
 
           {navItems.map(item => (
             <button key={item.id} onClick={() => setTab(item.id)} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '9px 12px', borderRadius: theme.radius.md,
-              border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500,
+              display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10,
+              padding: isMobile ? '8px 12px' : '9px 12px',
+              borderRadius: theme.radius.md, border: 'none', cursor: 'pointer',
+              fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap',
               background: tab === item.id ? theme.colors.borderLight : 'transparent',
               color: tab === item.id ? theme.colors.text : theme.colors.textSecondary,
-              textAlign: 'left', width: '100%',
+              textAlign: 'left', flexShrink: 0,
             }}>
               {item.icon}
               {item.label}
               {item.badge && (
                 <span style={{
-                  marginLeft: 'auto', background: theme.colors.primary, color: 'white',
+                  marginLeft: 4, background: theme.colors.primary, color: 'white',
                   fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: theme.radius.full,
                 }}>{item.badge}</span>
               )}
             </button>
           ))}
 
-          <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: `1px solid ${theme.colors.border}` }}>
+          {!isMobile && <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: `1px solid ${theme.colors.border}` }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <div style={{
                 background: theme.colors.background, border: `1px solid ${theme.colors.border}`,
@@ -190,13 +198,13 @@ export default function ManagerDashboard({ profile }) {
                 <div style={{ fontSize: 20, fontWeight: 700, color: theme.colors.text }}>{employees.length}</div>
               </div>
             </div>
-          </div>
+          </div>}
         </div>
 
-        <div style={{ flex: 1, padding: '24px 28px', overflowY: 'auto' }}>
+        <div style={{ flex: 1, padding: isMobile ? '16px' : '24px 28px', overflowY: 'auto', overflowX: 'hidden' }}>
 
           <div style={{ marginBottom: 20 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600, color: theme.colors.text }}>{tabTitles[tab].title}</h2>
+            <h2 style={{ fontSize: isMobile ? 15 : 16, fontWeight: 600, color: theme.colors.text }}>{tabTitles[tab].title}</h2>
             <p style={{ fontSize: 13, color: theme.colors.textMuted, marginTop: 2 }}>{tabTitles[tab].sub}</p>
           </div>
 
@@ -205,24 +213,15 @@ export default function ManagerDashboard({ profile }) {
               background: theme.colors.surface, border: `1px solid ${theme.colors.border}`,
               borderRadius: theme.radius.lg, overflow: 'hidden',
             }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: '#fafafa' }}>
-                    {['Employee', 'Dates', 'Days', 'Type', 'Status', 'Actions'].map(h => (
-                      <th key={h} style={thStyle}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
+              {isMobile ? (
+                <div>
                   {requests.length === 0 && (
-                    <tr><td colSpan={6} style={{ padding: '32px 20px', color: theme.colors.textMuted, fontSize: 14 }}>
-                      No requests yet.
-                    </td></tr>
+                    <div style={{ padding: '28px 16px', color: theme.colors.textMuted, fontSize: 14 }}>No requests yet.</div>
                   )}
                   {requests.map(r => (
-                    <tr key={r.id} style={{ borderBottom: `1px solid ${theme.colors.borderLight}` }}>
-                      <td style={tdStyle}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div key={r.id} style={{ padding: '14px 16px', borderBottom: `1px solid ${theme.colors.borderLight}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <div style={{
                             width: 32, height: 32, background: theme.colors.borderLight,
                             border: `1px solid ${theme.colors.border}`, borderRadius: theme.radius.full,
@@ -231,54 +230,107 @@ export default function ManagerDashboard({ profile }) {
                           }}>{getInitials(r.full_name)}</div>
                           <div>
                             <div style={{ fontWeight: 500, fontSize: 13 }}>{r.full_name}</div>
-                            <div style={{ fontSize: 11, color: theme.colors.textMuted }}>{r.email}</div>
+                            <div style={{ fontSize: 11, color: theme.colors.textMuted }}>{r.start_date} – {r.end_date} · {r.days_requested} days</div>
                           </div>
                         </div>
-                      </td>
-                      <td style={tdStyle}>
-                        <div style={{ fontSize: 13 }}>{r.start_date} – {r.end_date}</div>
-                        <div style={{ fontSize: 11, color: theme.colors.textMuted }}>{currentYear}</div>
-                      </td>
-                      <td style={tdStyle}>
-                        <span style={{ fontWeight: 600, fontSize: 14 }}>{r.days_requested}</span>
-                      </td>
-                      <td style={tdStyle}>
+                        <span style={{
+                          padding: '3px 9px', borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500,
+                          color: statusColor[r.status], background: statusBg[r.status],
+                          border: `1px solid ${statusBorder[r.status]}`,
+                        }}>{r.status}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                         <span style={{
                           padding: '3px 9px', borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500,
                           color: r.leave_type === 'unpaid' ? '#7c3aed' : '#1d4ed8',
                           background: r.leave_type === 'unpaid' ? '#f5f3ff' : '#eff6ff',
                           border: `1px solid ${r.leave_type === 'unpaid' ? '#ddd6fe' : '#bfdbfe'}`,
                         }}>{r.leave_type === 'unpaid' ? 'Unpaid' : 'Holiday'}</span>
-                      </td>
-                      <td style={tdStyle}>
-                        <span style={{
-                          padding: '3px 9px', borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500,
-                          color: statusColor[r.status], background: statusBg[r.status],
-                          border: `1px solid ${statusBorder[r.status]}`,
-                        }}>{r.status}</span>
-                      </td>
-                      <td style={tdStyle}>
-                        {r.status === 'pending' && (
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <button onClick={() => updateStatus(r.id, 'approved')} style={approveBtn}>Approve</button>
-                            <button onClick={() => updateStatus(r.id, 'rejected')} style={rejectBtn}>Reject</button>
-                          </div>
-                        )}
+                        {r.status === 'pending' && <>
+                          <button onClick={() => updateStatus(r.id, 'approved')} style={approveBtn}>Approve</button>
+                          <button onClick={() => updateStatus(r.id, 'rejected')} style={rejectBtn}>Reject</button>
+                        </>}
                         {(r.status === 'approved' || r.status === 'rejected') && (
                           <button onClick={() => cancelRequest(r.id)} style={cancelBtn}>Cancel</button>
                         )}
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#fafafa' }}>
+                      {['Employee', 'Dates', 'Days', 'Type', 'Status', 'Actions'].map(h => (
+                        <th key={h} style={thStyle}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {requests.length === 0 && (
+                      <tr><td colSpan={6} style={{ padding: '32px 20px', color: theme.colors.textMuted, fontSize: 14 }}>
+                        No requests yet.
+                      </td></tr>
+                    )}
+                    {requests.map(r => (
+                      <tr key={r.id} style={{ borderBottom: `1px solid ${theme.colors.borderLight}` }}>
+                        <td style={tdStyle}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{
+                              width: 32, height: 32, background: theme.colors.borderLight,
+                              border: `1px solid ${theme.colors.border}`, borderRadius: theme.radius.full,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 11, fontWeight: 600, color: theme.colors.textSecondary, flexShrink: 0,
+                            }}>{getInitials(r.full_name)}</div>
+                            <div>
+                              <div style={{ fontWeight: 500, fontSize: 13 }}>{r.full_name}</div>
+                              <div style={{ fontSize: 11, color: theme.colors.textMuted }}>{r.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={tdStyle}>
+                          <div style={{ fontSize: 13 }}>{r.start_date} – {r.end_date}</div>
+                          <div style={{ fontSize: 11, color: theme.colors.textMuted }}>{currentYear}</div>
+                        </td>
+                        <td style={tdStyle}><span style={{ fontWeight: 600, fontSize: 14 }}>{r.days_requested}</span></td>
+                        <td style={tdStyle}>
+                          <span style={{
+                            padding: '3px 9px', borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500,
+                            color: r.leave_type === 'unpaid' ? '#7c3aed' : '#1d4ed8',
+                            background: r.leave_type === 'unpaid' ? '#f5f3ff' : '#eff6ff',
+                            border: `1px solid ${r.leave_type === 'unpaid' ? '#ddd6fe' : '#bfdbfe'}`,
+                          }}>{r.leave_type === 'unpaid' ? 'Unpaid' : 'Holiday'}</span>
+                        </td>
+                        <td style={tdStyle}>
+                          <span style={{
+                            padding: '3px 9px', borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500,
+                            color: statusColor[r.status], background: statusBg[r.status],
+                            border: `1px solid ${statusBorder[r.status]}`,
+                          }}>{r.status}</span>
+                        </td>
+                        <td style={tdStyle}>
+                          {r.status === 'pending' && (
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <button onClick={() => updateStatus(r.id, 'approved')} style={approveBtn}>Approve</button>
+                              <button onClick={() => updateStatus(r.id, 'rejected')} style={rejectBtn}>Reject</button>
+                            </div>
+                          )}
+                          {(r.status === 'approved' || r.status === 'rejected') && (
+                            <button onClick={() => cancelRequest(r.id)} style={cancelBtn}>Cancel</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
 
           {tab === 'employees' && (
             <div style={{
               background: theme.colors.surface, border: `1px solid ${theme.colors.border}`,
-              borderRadius: theme.radius.lg, overflow: 'hidden',
+              borderRadius: theme.radius.lg, overflow: 'auto',
             }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
@@ -357,27 +409,27 @@ export default function ManagerDashboard({ profile }) {
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-  {pending > 0
-    ? <span style={{
-        padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500,
-        color: theme.colors.warning, background: theme.colors.warningLight,
-        border: `1px solid ${theme.colors.warningBorder}`,
-      }}>{pending} pending</span>
-    : <span style={{
-        padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 11,
-        color: theme.colors.textMuted, background: theme.colors.borderLight,
-        border: `1px solid ${theme.colors.border}`,
-      }}>No pending</span>
-  }
-  <button onClick={() => deleteEmployee(emp.id)} style={{
-    padding: '4px 12px', background: theme.colors.dangerLight,
-    color: theme.colors.danger, border: `1px solid ${theme.colors.dangerBorder}`,
-    borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500, cursor: 'pointer',
-  }}>Delete</button>
-</div>
+                        {pending > 0
+                          ? <span style={{
+                              padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500,
+                              color: theme.colors.warning, background: theme.colors.warningLight,
+                              border: `1px solid ${theme.colors.warningBorder}`,
+                            }}>{pending} pending</span>
+                          : <span style={{
+                              padding: '3px 10px', borderRadius: theme.radius.full, fontSize: 11,
+                              color: theme.colors.textMuted, background: theme.colors.borderLight,
+                              border: `1px solid ${theme.colors.border}`,
+                            }}>No pending</span>
+                        }
+                        <button onClick={() => deleteEmployee(emp.id)} style={{
+                          padding: '4px 12px', background: theme.colors.dangerLight,
+                          color: theme.colors.danger, border: `1px solid ${theme.colors.dangerBorder}`,
+                          borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500, cursor: 'pointer',
+                        }}>Delete</button>
+                      </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 12 : 20 }}>
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: 12, fontWeight: 500, color: theme.colors.text }}>Holiday</span>
@@ -387,8 +439,7 @@ export default function ManagerDashboard({ profile }) {
                         </div>
                         <div style={{ height: 6, background: theme.colors.borderLight, borderRadius: 999, overflow: 'hidden', marginTop: 6 }}>
                           <div style={{
-                            height: '100%', borderRadius: 999,
-                            width: `${holidayPct}%`,
+                            height: '100%', borderRadius: 999, width: `${holidayPct}%`,
                             background: remaining !== null && remaining < 5 ? theme.colors.danger : theme.colors.primary,
                           }}></div>
                         </div>
@@ -410,8 +461,7 @@ export default function ManagerDashboard({ profile }) {
                         </div>
                         <div style={{ height: 6, background: theme.colors.borderLight, borderRadius: 999, overflow: 'hidden', marginTop: 6 }}>
                           <div style={{
-                            height: '100%', borderRadius: 999,
-                            width: `${unpaidPct}%`,
+                            height: '100%', borderRadius: 999, width: `${unpaidPct}%`,
                             background: '#7c3aed',
                           }}></div>
                         </div>
