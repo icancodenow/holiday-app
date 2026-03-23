@@ -231,6 +231,7 @@ export default function ManagerDashboard({ profile }) {
                           <div>
                             <div style={{ fontWeight: 500, fontSize: 13 }}>{r.full_name}</div>
                             <div style={{ fontSize: 11, color: theme.colors.textMuted }}>{r.start_date} – {r.end_date} · {r.days_requested} days</div>
+{r.reason && <div style={{ fontSize: 11, color: theme.colors.textMuted, marginTop: 2 }}>"{r.reason}"</div>}
                           </div>
                         </div>
                         <span style={{
@@ -261,7 +262,7 @@ export default function ManagerDashboard({ profile }) {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: '#fafafa' }}>
-                      {['Employee', 'Dates', 'Days', 'Type', 'Status', 'Actions'].map(h => (
+                      {['Employee', 'Dates', 'Days', 'Type', 'Reason', 'Status', 'Actions'].map(h => (
                         <th key={h} style={thStyle}>{h}</th>
                       ))}
                     </tr>
@@ -293,6 +294,7 @@ export default function ManagerDashboard({ profile }) {
                           <div style={{ fontSize: 11, color: theme.colors.textMuted }}>{currentYear}</div>
                         </td>
                         <td style={tdStyle}><span style={{ fontWeight: 600, fontSize: 14 }}>{r.days_requested}</span></td>
+                        <td style={{ ...tdStyle, color: theme.colors.textSecondary }}>{r.reason || '—'}</td>
                         <td style={tdStyle}>
                           <span style={{
                             padding: '3px 9px', borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500,
