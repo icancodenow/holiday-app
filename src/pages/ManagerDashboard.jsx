@@ -294,15 +294,15 @@ export default function ManagerDashboard({ profile }) {
                           <div style={{ fontSize: 11, color: theme.colors.textMuted }}>{currentYear}</div>
                         </td>
                         <td style={tdStyle}><span style={{ fontWeight: 600, fontSize: 14 }}>{r.days_requested}</span></td>
-                        <td style={{ ...tdStyle, color: theme.colors.textSecondary }}>{r.reason || '—'}</td>
-                        <td style={tdStyle}>
-                          <span style={{
-                            padding: '3px 9px', borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500,
-                            color: r.leave_type === 'unpaid' ? '#7c3aed' : '#1d4ed8',
-                            background: r.leave_type === 'unpaid' ? '#f5f3ff' : '#eff6ff',
-                            border: `1px solid ${r.leave_type === 'unpaid' ? '#ddd6fe' : '#bfdbfe'}`,
-                          }}>{r.leave_type === 'unpaid' ? 'Unpaid' : 'Holiday'}</span>
-                        </td>
+<td style={tdStyle}>
+  <span style={{
+    padding: '3px 9px', borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500,
+    color: r.leave_type === 'unpaid' ? '#7c3aed' : '#1d4ed8',
+    background: r.leave_type === 'unpaid' ? '#f5f3ff' : '#eff6ff',
+    border: `1px solid ${r.leave_type === 'unpaid' ? '#ddd6fe' : '#bfdbfe'}`,
+  }}>{r.leave_type === 'unpaid' ? 'Unpaid' : 'Holiday'}</span>
+</td>
+<td style={{ ...tdStyle, color: theme.colors.textSecondary }}>{r.reason || '—'}</td>
                         <td style={tdStyle}>
                           <span style={{
                             padding: '3px 9px', borderRadius: theme.radius.full, fontSize: 11, fontWeight: 500,
